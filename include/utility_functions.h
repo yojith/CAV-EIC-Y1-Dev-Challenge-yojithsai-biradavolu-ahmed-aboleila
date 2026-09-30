@@ -4,6 +4,7 @@
 #include <queue>
 #include <utility>
 #include <limits>
+#include <numeric>
 #include <algorithm>
 #include <cmath>
 
