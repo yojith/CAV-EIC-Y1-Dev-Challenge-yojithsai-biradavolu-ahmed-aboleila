@@ -10,7 +10,7 @@ cmake --build build --target dev_challenge
 .\build\Debug\dev_challenge.exe
 ```
 
-The visualizer is part of `dev_challenge`: terrain is coloured and home, food, ants, and carrying ants are shown every step. `VISUALIZER_DELAY_MS` defaults to `1000` (one second); configure with `-DVISUALIZER_DELAY_MS=0` for the fastest run.
+The visualizer is part of `dev_challenge`: sectors, explored cells, food, ant trails, and current ant positions are shown every step. `VISUALIZER_DELAY_MS` defaults to `2000` (two seconds).
 
 ## Angle-ranked sectors
 

@@ -25,6 +25,7 @@ public:
     Coord returnHome(MapTemplate &terrainMap, MapTemplate &foodMap);
 
     int energy{0};
+    int id{-1};
 
     Coord homeCoord = Coord(-1, -1);
     Coord position = Coord(-1, -1);

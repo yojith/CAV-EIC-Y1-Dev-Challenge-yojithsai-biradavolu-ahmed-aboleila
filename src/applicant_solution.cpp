@@ -20,13 +20,13 @@
 #define USE_ANGLE_RANKING 0
 #endif
 
-// The game executable enables this. Tests override it to keep their output clean.
+// Terminal visualization is on by default.
 #ifndef ENABLE_VISUALIZER
 #define ENABLE_VISUALIZER 1
 #endif
 
 #ifndef VISUALIZER_DELAY_MS
-#define VISUALIZER_DELAY_MS 1000
+#define VISUALIZER_DELAY_MS 2000
 #endif
 
 namespace {
@@ -35,9 +35,10 @@ namespace {
         Coord home{-1, -1};
         std::size_t rows{};
         std::size_t cols{};
-        std::size_t antCount{};
         std::vector<std::vector<Coord>> queues;
-        std::vector<std::size_t> nextWaypoint;
+        std::vector<MapTemplate> scanned;
+        std::vector<std::vector<Coord>> trails;
+        MapTemplate sectorForCell;
     };
 
     Plan plan;
@@ -53,12 +54,13 @@ namespace {
 
     bool isCurrentPlan(const AntWorld &world) {
         return plan.world == &world && plan.home == world.homeCoordinates &&
-               plan.rows == world.terrainMap.size() && plan.cols == world.terrainMap.front().size() &&
-               plan.antCount == world.ants.size();
+               plan.rows == world.terrainMap.size() && plan.cols == world.terrainMap.front().size();
     }
 
     void makePlan(const AntWorld &world) {
         const std::size_t antCount = world.ants.size();
+        const std::size_t slots = static_cast<std::size_t>(std::max_element(
+            world.ants.begin(), world.ants.end(), [](const Ant &a, const Ant &b) { return a.id < b.id; })->id + 1);
         std::vector<Coord> cells;
         for (int row = 0; row < static_cast<int>(world.terrainMap.size()); ++row) {
             for (int col = 0; col < static_cast<int>(world.terrainMap.front().size()); ++col) {
@@ -72,6 +74,7 @@ namespace {
         });
 
         std::vector<std::vector<Coord>> sectors(antCount);
+        MapTemplate sectorForCell(world.terrainMap.size(), std::vector<int>(world.terrainMap.front().size(), -1));
         std::vector<double> sectorWidth(antCount, 0.0);
         std::vector<int> sectorRoundTrip(antCount, 0);
         const std::size_t base = cells.size() / antCount;
@@ -82,6 +85,7 @@ namespace {
             sectors[sector] = std::vector<Coord>(cells.begin() + static_cast<std::ptrdiff_t>(first),
                                                   cells.begin() + static_cast<std::ptrdiff_t>(first + count));
             first += count;
+            for (Coord cell: sectors[sector]) sectorForCell[cell.first][cell.second] = static_cast<int>(sector);
             if (!sectors[sector].empty()) {
                 sectorWidth[sector] = angleFrom(world.homeCoordinates, sectors[sector].back()) -
                                       angleFrom(world.homeCoordinates, sectors[sector].front());
@@ -114,10 +118,14 @@ namespace {
             return std::tuple{world.ants[a].energy, a} > std::tuple{world.ants[b].energy, b};
         });
 
-        plan = {&world, world.homeCoordinates, world.terrainMap.size(), world.terrainMap.front().size(), antCount,
-                std::vector<std::vector<Coord>>(antCount), std::vector<std::size_t>(antCount, 0)};
+        plan = {&world, world.homeCoordinates, world.terrainMap.size(), world.terrainMap.front().size(),
+                std::vector<std::vector<Coord>>(slots),
+                std::vector<MapTemplate>(slots, MapTemplate(world.terrainMap.size(),
+                                                             std::vector<int>(world.terrainMap.front().size(), 0))),
+                std::vector<std::vector<Coord>>(slots), std::move(sectorForCell)};
         for (std::size_t rank = 0; rank < antCount; ++rank) {
-            plan.queues[antRank[rank]] = std::move(sectors[sectorRank[rank]]);
+            const std::size_t antId = static_cast<std::size_t>(world.ants[antRank[rank]].id);
+            plan.queues[antId] = std::move(sectors[sectorRank[rank]]);
         }
     }
 
@@ -140,25 +148,70 @@ namespace {
         return best;
     }
 
+    void markLocalScan(const AntWorld &world, const Ant &ant) {
+        MapTemplate &scanned = plan.scanned[ant.id];
+        for (int row = ant.position.first - ant.foodRadius; row <= ant.position.first + ant.foodRadius; ++row) {
+            for (int col = ant.position.second - ant.foodRadius; col <= ant.position.second + ant.foodRadius; ++col) {
+                if (row >= 0 && row < static_cast<int>(world.terrainMap.size()) &&
+                    col >= 0 && col < static_cast<int>(world.terrainMap.front().size())) {
+                    scanned[row][col] = 1;
+                }
+            }
+        }
+    }
+
+    Coord nextUnscannedWaypoint(const AntWorld &world, const Ant &ant) {
+        for (Coord waypoint: plan.queues[ant.id]) {
+            if (!plan.scanned[ant.id][waypoint.first][waypoint.second] && canReachAndReturn(world, ant, waypoint)) {
+                return waypoint;
+            }
+        }
+        return {-1, -1};
+    }
+
+    void recordTrail(const AntWorld &world, const Ant &ant, Coord from) {
+        for (Coord cell: shortestPath(world.terrainMap, from, ant.position)) {
+            std::vector<Coord> &trail = plan.trails[ant.id];
+            if (trail.empty() || trail.back() != cell) trail.push_back(cell);
+        }
+    }
+
 #if ENABLE_VISUALIZER
     void renderWorld(const AntWorld &world) {
         static std::size_t frame = 0;
-        constexpr const char *terrainColors[] = {
-            "\x1b[48;2;46;125;50m",  // height 0: green
-            "\x1b[48;2;107;107;44m", // height 1: greenish-brown
-            "\x1b[48;2;121;85;61m"   // height 2: brown
-        };
+        constexpr const char *green = "\x1b[48;2;102;160;80m";
+        constexpr const char *darkGreen = "\x1b[48;2;45;100;42m";
+        constexpr const char *brown = "\x1b[48;2;170;120;75m";
+        constexpr const char *darkBrown = "\x1b[48;2;100;65;40m";
+        constexpr const char *antColors[] = {"\x1b[38;5;226m", "\x1b[38;5;51m", "\x1b[38;5;201m",
+                                             "\x1b[38;5;231m", "\x1b[38;5;214m", "\x1b[38;5;159m"};
 
         std::cout << "\x1b[2J\x1b[HFrame " << ++frame << " | Score: " << world.score << '\n';
         for (std::size_t row = 0; row < world.terrainMap.size(); ++row) {
             for (std::size_t col = 0; col < world.terrainMap[row].size(); ++col) {
                 const Coord cell{static_cast<int>(row), static_cast<int>(col)};
+                const int sector = plan.sectorForCell.empty() ? 0 : plan.sectorForCell[row][col];
+                const bool explored = std::any_of(plan.scanned.begin(), plan.scanned.end(), [&](const MapTemplate &grid) {
+                    return grid[row][col] != 0;
+                });
+                const bool greenSector = sector < 0 || sector % 2 == 0;
+                const char *background = greenSector ? (explored ? darkGreen : green) : (explored ? darkBrown : brown);
                 char symbol = cell == world.homeCoordinates ? 'H' :
                               world.foodMap[row][col] == 1 ? 'F' : ' ';
-                for (const Ant &ant: world.ants) {
-                    if (ant.position == cell) symbol = ant.carryingFood ? '@' : 'A';
+                int owner = -1;
+                for (std::size_t id = 0; id < plan.trails.size(); ++id) {
+                    if (std::find(plan.trails[id].begin(), plan.trails[id].end(), cell) != plan.trails[id].end()) {
+                        owner = static_cast<int>(id);
+                    }
                 }
-                std::cout << terrainColors[world.terrainMap[row][col]] << symbol << "\x1b[0m";
+                if (symbol == ' ' && owner >= 0) symbol = static_cast<char>('a' + owner % 26);
+                for (const Ant &ant: world.ants) {
+                    if (ant.position == cell) {
+                        symbol = ant.carryingFood ? '@' : static_cast<char>('A' + ant.id % 26);
+                        owner = ant.id;
+                    }
+                }
+                std::cout << background << (owner >= 0 ? antColors[owner % 6] : "\x1b[97m") << symbol << "\x1b[0m";
             }
             std::cout << '\n';
         }
@@ -175,36 +228,41 @@ namespace {
 
 /** @brief Chooses visible food first, then sweeps an energy-ranked sector. */
 void AntWorld::forage() {
-#if ENABLE_VISUALIZER
-    renderWorld(*this);
-#endif
     if (ants.empty()) return;
 
     // ponytail: one active world plan; key plans by world lifetime if concurrent simulations are needed.
     if (!isCurrentPlan(*this)) makePlan(*this);
 
-    for (std::size_t index = 0; index < ants.size(); ++index) {
-        Ant &ant = ants[index];
+#if ENABLE_VISUALIZER
+    renderWorld(*this);
+#endif
+
+    for (Ant &ant: ants) {
+        const Coord previous = ant.position;
+        markLocalScan(*this, ant);
         if (ant.carryingFood) {
             ant.returnHome(terrainMap, foodMap);
+            recordTrail(*this, ant, previous);
             continue;
         }
 
         const Coord food = bestVisibleFood(*this, ant);
         if (food.first != -1) {
             ant.move(terrainMap, food, foodMap);
+            recordTrail(*this, ant, previous);
             continue;
         }
 
-        if (plan.nextWaypoint[index] < plan.queues[index].size()) {
-            const Coord waypoint = plan.queues[index][plan.nextWaypoint[index]];
-            if (canReachAndReturn(*this, ant, waypoint)) {
-                ++plan.nextWaypoint[index];
-                ant.move(terrainMap, waypoint, foodMap);
-                continue;
-            }
+        const Coord waypoint = nextUnscannedWaypoint(*this, ant);
+        if (waypoint.first != -1) {
+            ant.move(terrainMap, waypoint, foodMap);
+            recordTrail(*this, ant, previous);
+            continue;
         }
 
-        if (ant.position != homeCoordinates) ant.returnHome(terrainMap, foodMap);
+        if (ant.position != homeCoordinates) {
+            ant.returnHome(terrainMap, foodMap);
+            recordTrail(*this, ant, previous);
+        }
     }
 }
