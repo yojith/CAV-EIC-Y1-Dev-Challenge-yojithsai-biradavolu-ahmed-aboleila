@@ -10,7 +10,7 @@ cmake --build build --target dev_challenge
 .\build\Debug\dev_challenge.exe
 ```
 
-The visualizer is part of `dev_challenge`: sectors, explored cells, food, ant trails, and current ant positions are shown every step. `VISUALIZER_DELAY_MS` defaults to `2000` (two seconds).
+The visualizer is part of `dev_challenge`: sectors, explored cells, food, ant trails, and current ant positions are shown every step. Press Enter to advance one forage step. In `src/applicant_solution.cpp`, set `USE_SMART_SCANNING` to `0` for every indexed sector cell or `1` to skip cells covered by the ant's 7-by-7 scan.
 
 ## Angle-ranked sectors
 

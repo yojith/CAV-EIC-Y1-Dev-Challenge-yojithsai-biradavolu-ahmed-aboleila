@@ -12,7 +12,7 @@
 
 - Do not add or modify tests unless the user explicitly asks for tests.
 - Ants must not read one another's scan state or food knowledge.
-- Visualizer frame delay is exactly 2000 ms.
+- Visualizer waits for Enter before each forage action.
 - Keep the existing 100-step cap.
 
 ---

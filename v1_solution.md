@@ -74,6 +74,8 @@ The boundary between two sectors is the angle halfway between their adjacent cel
 
 Each ant consumes its sector queue from nearest to farthest. It scans at each waypoint, collects visible affordable food, returns home when carrying food, and resumes at the first unvisited waypoint. Do not visit every cell: `foodScan()` already covers a 7-by-7 square, so retain only waypoints that add previously unscanned cells to the sector.
 
+`USE_SMART_SCANNING` selects the sweep method: `0` visits every ordered sector cell; `1` skips a queued cell when that ant's own 7-by-7 scan already covered it.
+
 ## Assign longer sectors to higher-energy ants
 
 Do not rank sectors by wedge angle. A narrow wedge often reaches farther toward a corner, but the actual terrain cost can differ. Rank using the greatest round-trip Dijkstra cost of any scan waypoint in the sector:

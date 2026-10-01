@@ -5,13 +5,11 @@
 #include "../include/antworld.h"
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <iostream>
 #include <numbers>
 #include <numeric>
-#include <thread>
 #include <tuple>
 #include <vector>
 
@@ -20,13 +18,14 @@
 #define USE_ANGLE_RANKING 0
 #endif
 
+// Set to 0 to visit every cell in the ordered sector queue. Set to 1 to skip cells covered by this ant's 7x7 scan.
+#ifndef USE_SMART_SCANNING
+#define USE_SMART_SCANNING 1
+#endif
+
 // Terminal visualization is on by default.
 #ifndef ENABLE_VISUALIZER
 #define ENABLE_VISUALIZER 1
-#endif
-
-#ifndef VISUALIZER_DELAY_MS
-#define VISUALIZER_DELAY_MS 2000
 #endif
 
 namespace {
@@ -36,8 +35,11 @@ namespace {
         std::size_t rows{};
         std::size_t cols{};
         std::vector<std::vector<Coord>> queues;
+        std::vector<std::size_t> nextWaypoint;
         std::vector<MapTemplate> scanned;
+        std::vector<std::vector<Coord>> rememberedFood;
         std::vector<std::vector<Coord>> trails;
+        std::vector<int> sectorForAnt;
         MapTemplate sectorForCell;
     };
 
@@ -120,12 +122,15 @@ namespace {
 
         plan = {&world, world.homeCoordinates, world.terrainMap.size(), world.terrainMap.front().size(),
                 std::vector<std::vector<Coord>>(slots),
+                std::vector<std::size_t>(slots, 0),
                 std::vector<MapTemplate>(slots, MapTemplate(world.terrainMap.size(),
                                                              std::vector<int>(world.terrainMap.front().size(), 0))),
-                std::vector<std::vector<Coord>>(slots), std::move(sectorForCell)};
+                std::vector<std::vector<Coord>>(slots), std::vector<std::vector<Coord>>(slots),
+                std::vector<int>(slots, -1), std::move(sectorForCell)};
         for (std::size_t rank = 0; rank < antCount; ++rank) {
             const std::size_t antId = static_cast<std::size_t>(world.ants[antRank[rank]].id);
             plan.queues[antId] = std::move(sectors[sectorRank[rank]]);
+            plan.sectorForAnt[antId] = sectorRank[rank];
         }
     }
 
@@ -134,10 +139,27 @@ namespace {
                pathCost(world.terrainMap, destination, world.homeCoordinates) <= ant.energy;
     }
 
-    Coord bestVisibleFood(AntWorld &world, Ant &ant) {
+    void rememberVisibleFood(AntWorld &world, Ant &ant) {
+        std::vector<Coord> visible = ant.foodScan(world.foodMap);
+        std::vector<Coord> &memory = plan.rememberedFood[ant.id];
+        memory.erase(std::remove_if(memory.begin(), memory.end(), [&](Coord food) {
+            const bool inCurrentScan = std::abs(food.first - ant.position.first) <= ant.foodRadius &&
+                                       std::abs(food.second - ant.position.second) <= ant.foodRadius;
+            return inCurrentScan && std::find(visible.begin(), visible.end(), food) == visible.end();
+        }), memory.end());
+
+        for (Coord food: visible) {
+            if (plan.sectorForCell[food.first][food.second] == plan.sectorForAnt[ant.id] &&
+                std::find(memory.begin(), memory.end(), food) == memory.end()) {
+                memory.push_back(food);
+            }
+        }
+    }
+
+    Coord bestRememberedFood(const AntWorld &world, const Ant &ant) {
         Coord best{-1, -1};
         int bestCost = 0;
-        for (Coord food: ant.foodScan(world.foodMap)) {
+        for (Coord food: plan.rememberedFood[ant.id]) {
             const int cost = pathCost(world.terrainMap, ant.position, food) +
                              pathCost(world.terrainMap, food, world.homeCoordinates);
             if (cost <= ant.energy && (best.first == -1 || cost < bestCost)) {
@@ -146,6 +168,11 @@ namespace {
             }
         }
         return best;
+    }
+
+    void forgetFood(const Ant &ant, Coord food) {
+        std::vector<Coord> &memory = plan.rememberedFood[ant.id];
+        memory.erase(std::remove(memory.begin(), memory.end(), food), memory.end());
     }
 
     void markLocalScan(const AntWorld &world, const Ant &ant) {
@@ -160,13 +187,18 @@ namespace {
         }
     }
 
-    Coord nextUnscannedWaypoint(const AntWorld &world, const Ant &ant) {
-        for (Coord waypoint: plan.queues[ant.id]) {
-            if (!plan.scanned[ant.id][waypoint.first][waypoint.second] && canReachAndReturn(world, ant, waypoint)) {
-                return waypoint;
-            }
+    Coord nextQueuedWaypoint(const AntWorld &world, const Ant &ant) {
+        std::size_t &next = plan.nextWaypoint[ant.id];
+        const std::vector<Coord> &queue = plan.queues[ant.id];
+#if USE_SMART_SCANNING
+        while (next < queue.size() && plan.scanned[ant.id][queue[next].first][queue[next].second]) {
+            ++next;
         }
-        return {-1, -1};
+#endif
+        if (next == queue.size()) return {-1, -1};
+
+        const Coord waypoint = queue[next];
+        return canReachAndReturn(world, ant, waypoint) ? waypoint : Coord{-1, -1};
     }
 
     void recordTrail(const AntWorld &world, const Ant &ant, Coord from) {
@@ -221,7 +253,8 @@ namespace {
                       << " energy=" << ant.energy << (ant.carryingFood ? " carrying" : "") << '\n';
         }
         std::cout << std::flush;
-        std::this_thread::sleep_for(std::chrono::milliseconds(VISUALIZER_DELAY_MS));
+        std::cout << "Press Enter to advance..." << std::flush;
+        std::cin.get();
     }
 #endif
 } // namespace
@@ -240,22 +273,27 @@ void AntWorld::forage() {
     for (Ant &ant: ants) {
         const Coord previous = ant.position;
         markLocalScan(*this, ant);
+        rememberVisibleFood(*this, ant);
         if (ant.carryingFood) {
             ant.returnHome(terrainMap, foodMap);
             recordTrail(*this, ant, previous);
             continue;
         }
 
-        const Coord food = bestVisibleFood(*this, ant);
+        const Coord food = bestRememberedFood(*this, ant);
         if (food.first != -1) {
             ant.move(terrainMap, food, foodMap);
+            forgetFood(ant, food);
             recordTrail(*this, ant, previous);
             continue;
         }
 
-        const Coord waypoint = nextUnscannedWaypoint(*this, ant);
+        const Coord waypoint = nextQueuedWaypoint(*this, ant);
         if (waypoint.first != -1) {
             ant.move(terrainMap, waypoint, foodMap);
+#if !USE_SMART_SCANNING
+            ++plan.nextWaypoint[ant.id];
+#endif
             recordTrail(*this, ant, previous);
             continue;
         }
