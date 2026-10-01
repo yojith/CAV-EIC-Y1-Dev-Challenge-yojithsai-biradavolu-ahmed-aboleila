@@ -1,4 +1,5 @@
 #include <iostream>
+#include <numeric>
 #include "../include/antworld.h"
 
 /** @brief The main function that will run the game. If you are not using a IDE gui, this is the executable you want to target when you build
@@ -15,20 +16,28 @@ int main() {
     // std::random_device rd;
     // uint32_t SEED = rd();
 
-    const int MAX_SIMULATION_STEP_COUNT = 100;
     AntWorld gameInstance = AntWorld(SEED);
 
     bool gameOver = false;
-    int stepCount = 1;
-    while (not gameOver && stepCount <= MAX_SIMULATION_STEP_COUNT) {
+    int stepCount = 0;
+    int idleSteps = 0;
+    while (not gameOver && idleSteps < 10) {
+        const int energyBefore = std::accumulate(gameInstance.ants.begin(), gameInstance.ants.end(), 0,
+                                                  [](int total, const Ant &ant) { return total + ant.energy; });
         gameOver = gameInstance.worldStep();
-        stepCount++;
+        ++stepCount;
+        const int energyAfter = std::accumulate(gameInstance.ants.begin(), gameInstance.ants.end(), 0,
+                                                 [](int total, const Ant &ant) { return total + ant.energy; });
+        idleSteps = energyAfter == energyBefore ? idleSteps + 1 : 0;
     }
+
+    gameInstance.renderWorld(false);
 
     if (gameOver) {
         printf("GAME OVER!! Total score: %d\n", gameInstance.score);
-    } else if (stepCount >= MAX_SIMULATION_STEP_COUNT) {
-        printf("Game not finished. Hit maximum simulation step count. Total score: %d\n", gameInstance.score);
+    } else if (idleSteps == 10) {
+        printf("Game stopped after 10 turns without energy use. Steps: %d. Total score: %d\n",
+               stepCount, gameInstance.score);
     } else {
         printf("Termination reached for unknown reason.");
     }

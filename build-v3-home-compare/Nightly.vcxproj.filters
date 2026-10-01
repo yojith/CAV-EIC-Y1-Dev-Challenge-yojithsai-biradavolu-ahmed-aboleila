@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\yojit\Documents\Yojith_Work\Mac_EcoCar\CAV-EIC-Y1-Dev-Challenge\build-v3-home-compare\CMakeFiles\4292093ae0d5b42832ec615efcc7daf4\Nightly.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\yojit\Documents\Yojith_Work\Mac_EcoCar\CAV-EIC-Y1-Dev-Challenge\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\yojit\Documents\Yojith_Work\Mac_EcoCar\CAV-EIC-Y1-Dev-Challenge\build-v3-home-compare\CMakeFiles\Nightly" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{77D0CDBD-DF06-374C-AD59-FEC0C8D38652}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

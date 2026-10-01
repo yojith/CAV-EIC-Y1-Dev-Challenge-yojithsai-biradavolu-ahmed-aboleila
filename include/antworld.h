@@ -45,6 +45,8 @@ public:
 
     void forage();
 
+    void renderWorld(bool waitForEnter);
+
     void updateWorld();
 
     bool isGameOver();

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\yojit\Documents\Yojith_Work\Mac_EcoCar\CAV-EIC-Y1-Dev-Challenge\build-v2-compare\CMakeFiles\8844e8d7100f9dc9c65bbe443973bebe\RUN_TESTS_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{9D6031CC-CC08-30CA-8973-9D51373C1645}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

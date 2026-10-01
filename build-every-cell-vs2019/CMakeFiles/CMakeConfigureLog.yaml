@@ -104,7 +104,7 @@ events:
     message: |
       Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
       Compiler:  
-      Build flags: /DUSE_SMART_SCANNING=0
+      Build flags: /DUSE_SMART_SCANNING=0;/DWAIT_FOR_ENTER=0
       Id flags:  
       
       The output was:
@@ -112,7 +112,7 @@ events:
       Microsoft (R) Build Engine version 16.11.6+a918ceb31 for .NET Framework
       Copyright (C) Microsoft Corporation. All rights reserved.
       
-      Build started 2026-09-30 11:11:45 PM.
+      Build started 2026-09-30 11:22:48 PM.
       Project "C:\\Users\\yojit\\Documents\\Yojith_Work\\Mac_EcoCar\\CAV-EIC-Y1-Dev-Challenge\\build-every-cell-vs2019\\CMakeFiles\\4.4.3\\CompilerIdCXX\\CompilerIdCXX.vcxproj" on node 1 (default targets).
       PrepareForBuild:
         Creating directory "Debug\\".
@@ -138,7 +138,7 @@ events:
           0 Warning(s)
           0 Error(s)
       
-      Time Elapsed 00:00:01.73
+      Time Elapsed 00:00:01.52
       
       
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
@@ -1600,10 +1600,10 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "C:/Users/yojit/Documents/Yojith_Work/Mac_EcoCar/CAV-EIC-Y1-Dev-Challenge/build-every-cell-vs2019/CMakeFiles/CMakeScratch/TryCompile-huxh0w"
-      binary: "C:/Users/yojit/Documents/Yojith_Work/Mac_EcoCar/CAV-EIC-Y1-Dev-Challenge/build-every-cell-vs2019/CMakeFiles/CMakeScratch/TryCompile-huxh0w"
+      source: "C:/Users/yojit/Documents/Yojith_Work/Mac_EcoCar/CAV-EIC-Y1-Dev-Challenge/build-every-cell-vs2019/CMakeFiles/CMakeScratch/TryCompile-jpm1pz"
+      binary: "C:/Users/yojit/Documents/Yojith_Work/Mac_EcoCar/CAV-EIC-Y1-Dev-Challenge/build-every-cell-vs2019/CMakeFiles/CMakeScratch/TryCompile-jpm1pz"
     cmakeVariables:
-      CMAKE_CXX_FLAGS: "/DUSE_SMART_SCANNING=0"
+      CMAKE_CXX_FLAGS: "/DUSE_SMART_SCANNING=0 /DWAIT_FOR_ENTER=0"
       CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
       CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
@@ -1612,38 +1612,38 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: false
       stdout: |
-        Change Dir: 'C:/Users/yojit/Documents/Yojith_Work/Mac_EcoCar/CAV-EIC-Y1-Dev-Challenge/build-every-cell-vs2019/CMakeFiles/CMakeScratch/TryCompile-huxh0w'
+        Change Dir: 'C:/Users/yojit/Documents/Yojith_Work/Mac_EcoCar/CAV-EIC-Y1-Dev-Challenge/build-every-cell-vs2019/CMakeFiles/CMakeScratch/TryCompile-jpm1pz'
         
-        Run Build Command(s): "C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Current/Bin/MSBuild.exe" cmTC_f25e2.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:n
+        Run Build Command(s): "C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Current/Bin/MSBuild.exe" cmTC_e296e.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:n
         Microsoft (R) Build Engine version 16.11.6+a918ceb31 for .NET Framework
         Copyright (C) Microsoft Corporation. All rights reserved.
         
-        Build started 2026-09-30 11:11:47 PM.
-        Project "C:\\Users\\yojit\\Documents\\Yojith_Work\\Mac_EcoCar\\CAV-EIC-Y1-Dev-Challenge\\build-every-cell-vs2019\\CMakeFiles\\CMakeScratch\\TryCompile-huxh0w\\cmTC_f25e2.vcxproj" on node 1 (default targets).
+        Build started 2026-09-30 11:22:50 PM.
+        Project "C:\\Users\\yojit\\Documents\\Yojith_Work\\Mac_EcoCar\\CAV-EIC-Y1-Dev-Challenge\\build-every-cell-vs2019\\CMakeFiles\\CMakeScratch\\TryCompile-jpm1pz\\cmTC_e296e.vcxproj" on node 1 (default targets).
         PrepareForBuild:
-          Creating directory "C:\\Users\\yojit\\Documents\\Yojith_Work\\Mac_EcoCar\\CAV-EIC-Y1-Dev-Challenge\\build-every-cell-vs2019\\CMakeFiles\\CMakeScratch\\TryCompile-huxh0w\\Debug\\".
-          Creating directory "cmTC_f25e2.dir\\Debug\\cmTC_f25e2.tlog\\".
+          Creating directory "C:\\Users\\yojit\\Documents\\Yojith_Work\\Mac_EcoCar\\CAV-EIC-Y1-Dev-Challenge\\build-every-cell-vs2019\\CMakeFiles\\CMakeScratch\\TryCompile-jpm1pz\\Debug\\".
+          Creating directory "cmTC_e296e.dir\\Debug\\cmTC_e296e.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_f25e2.dir\\Debug\\cmTC_f25e2.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Creating "cmTC_e296e.dir\\Debug\\cmTC_e296e.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
         ClCompile:
-          C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D USE_SMART_SCANNING=0 /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_f25e2.dir\\Debug\\\\" /Fd"cmTC_f25e2.dir\\Debug\\vc142.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.4\\Modules\\CMakeCXXCompilerABI.cpp"
+          C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D USE_SMART_SCANNING=0 /D WAIT_FOR_ENTER=0 /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_e296e.dir\\Debug\\\\" /Fd"cmTC_e296e.dir\\Debug\\vc142.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.4\\Modules\\CMakeCXXCompilerABI.cpp"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.29.30159 for x64
           CMakeCXXCompilerABI.cpp
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D USE_SMART_SCANNING=0 /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_f25e2.dir\\Debug\\\\" /Fd"cmTC_f25e2.dir\\Debug\\vc142.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.4\\Modules\\CMakeCXXCompilerABI.cpp"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D USE_SMART_SCANNING=0 /D WAIT_FOR_ENTER=0 /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_e296e.dir\\Debug\\\\" /Fd"cmTC_e296e.dir\\Debug\\vc142.pdb" /external:W1 /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.4\\Modules\\CMakeCXXCompilerABI.cpp"
         Link:
-          C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Users\\yojit\\Documents\\Yojith_Work\\Mac_EcoCar\\CAV-EIC-Y1-Dev-Challenge\\build-every-cell-vs2019\\CMakeFiles\\CMakeScratch\\TryCompile-huxh0w\\Debug\\cmTC_f25e2.exe" /INCREMENTAL /ILK:"cmTC_f25e2.dir\\Debug\\cmTC_f25e2.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/yojit/Documents/Yojith_Work/Mac_EcoCar/CAV-EIC-Y1-Dev-Challenge/build-every-cell-vs2019/CMakeFiles/CMakeScratch/TryCompile-huxh0w/Debug/cmTC_f25e2.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Users/yojit/Documents/Yojith_Work/Mac_EcoCar/CAV-EIC-Y1-Dev-Challenge/build-every-cell-vs2019/CMakeFiles/CMakeScratch/TryCompile-huxh0w/Debug/cmTC_f25e2.lib" /MACHINE:X64  /machine:x64 cmTC_f25e2.dir\\Debug\\CMakeCXXCompilerABI.obj
-          cmTC_f25e2.vcxproj -> C:\\Users\\yojit\\Documents\\Yojith_Work\\Mac_EcoCar\\CAV-EIC-Y1-Dev-Challenge\\build-every-cell-vs2019\\CMakeFiles\\CMakeScratch\\TryCompile-huxh0w\\Debug\\cmTC_f25e2.exe
+          C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Users\\yojit\\Documents\\Yojith_Work\\Mac_EcoCar\\CAV-EIC-Y1-Dev-Challenge\\build-every-cell-vs2019\\CMakeFiles\\CMakeScratch\\TryCompile-jpm1pz\\Debug\\cmTC_e296e.exe" /INCREMENTAL /ILK:"cmTC_e296e.dir\\Debug\\cmTC_e296e.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/yojit/Documents/Yojith_Work/Mac_EcoCar/CAV-EIC-Y1-Dev-Challenge/build-every-cell-vs2019/CMakeFiles/CMakeScratch/TryCompile-jpm1pz/Debug/cmTC_e296e.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Users/yojit/Documents/Yojith_Work/Mac_EcoCar/CAV-EIC-Y1-Dev-Challenge/build-every-cell-vs2019/CMakeFiles/CMakeScratch/TryCompile-jpm1pz/Debug/cmTC_e296e.lib" /MACHINE:X64  /machine:x64 cmTC_e296e.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_e296e.vcxproj -> C:\\Users\\yojit\\Documents\\Yojith_Work\\Mac_EcoCar\\CAV-EIC-Y1-Dev-Challenge\\build-every-cell-vs2019\\CMakeFiles\\CMakeScratch\\TryCompile-jpm1pz\\Debug\\cmTC_e296e.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_f25e2.dir\\Debug\\cmTC_f25e2.tlog\\unsuccessfulbuild".
-          Touching "cmTC_f25e2.dir\\Debug\\cmTC_f25e2.tlog\\cmTC_f25e2.lastbuildstate".
-        Done Building Project "C:\\Users\\yojit\\Documents\\Yojith_Work\\Mac_EcoCar\\CAV-EIC-Y1-Dev-Challenge\\build-every-cell-vs2019\\CMakeFiles\\CMakeScratch\\TryCompile-huxh0w\\cmTC_f25e2.vcxproj" (default targets).
+          Deleting file "cmTC_e296e.dir\\Debug\\cmTC_e296e.tlog\\unsuccessfulbuild".
+          Touching "cmTC_e296e.dir\\Debug\\cmTC_e296e.tlog\\cmTC_e296e.lastbuildstate".
+        Done Building Project "C:\\Users\\yojit\\Documents\\Yojith_Work\\Mac_EcoCar\\CAV-EIC-Y1-Dev-Challenge\\build-every-cell-vs2019\\CMakeFiles\\CMakeScratch\\TryCompile-jpm1pz\\cmTC_e296e.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:01.16
+        Time Elapsed 00:00:01.22
         
       exitCode: 0
   -
@@ -1656,7 +1656,7 @@ events:
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|link\\.exe|lld-link(\\.exe)?))("|,| |$)]
-        link line: [  C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Users\\yojit\\Documents\\Yojith_Work\\Mac_EcoCar\\CAV-EIC-Y1-Dev-Challenge\\build-every-cell-vs2019\\CMakeFiles\\CMakeScratch\\TryCompile-huxh0w\\Debug\\cmTC_f25e2.exe" /INCREMENTAL /ILK:"cmTC_f25e2.dir\\Debug\\cmTC_f25e2.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/yojit/Documents/Yojith_Work/Mac_EcoCar/CAV-EIC-Y1-Dev-Challenge/build-every-cell-vs2019/CMakeFiles/CMakeScratch/TryCompile-huxh0w/Debug/cmTC_f25e2.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Users/yojit/Documents/Yojith_Work/Mac_EcoCar/CAV-EIC-Y1-Dev-Challenge/build-every-cell-vs2019/CMakeFiles/CMakeScratch/TryCompile-huxh0w/Debug/cmTC_f25e2.lib" /MACHINE:X64  /machine:x64 cmTC_f25e2.dir\\Debug\\CMakeCXXCompilerABI.obj] ==> linker [C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe]
+        link line: [  C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\Users\\yojit\\Documents\\Yojith_Work\\Mac_EcoCar\\CAV-EIC-Y1-Dev-Challenge\\build-every-cell-vs2019\\CMakeFiles\\CMakeScratch\\TryCompile-jpm1pz\\Debug\\cmTC_e296e.exe" /INCREMENTAL /ILK:"cmTC_e296e.dir\\Debug\\cmTC_e296e.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/yojit/Documents/Yojith_Work/Mac_EcoCar/CAV-EIC-Y1-Dev-Challenge/build-every-cell-vs2019/CMakeFiles/CMakeScratch/TryCompile-jpm1pz/Debug/cmTC_e296e.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Users/yojit/Documents/Yojith_Work/Mac_EcoCar/CAV-EIC-Y1-Dev-Challenge/build-every-cell-vs2019/CMakeFiles/CMakeScratch/TryCompile-jpm1pz/Debug/cmTC_e296e.lib" /MACHINE:X64  /machine:x64 cmTC_e296e.dir\\Debug\\CMakeCXXCompilerABI.obj] ==> linker [C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe]
         linker tool for 'CXX': C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/link.exe 
         implicit libs: []
         implicit objs: []
