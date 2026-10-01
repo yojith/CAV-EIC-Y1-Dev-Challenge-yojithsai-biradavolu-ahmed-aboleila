@@ -11,7 +11,6 @@
 #include <limits>
 #include <numbers>
 #include <numeric>
-#include <queue>
 #include <tuple>
 #include <vector>
 
@@ -259,40 +258,10 @@ namespace {
     }
 
 #if USE_V2_STRATEGY || USE_V3_STRATEGY
-    std::vector<Coord> sectorPath(const AntWorld &world, Coord from, Coord to, int sector, int adjacent = -1) {
-        const int rows = static_cast<int>(world.terrainMap.size());
-        const int cols = static_cast<int>(world.terrainMap.front().size());
-        const int infinity = std::numeric_limits<int>::max();
-        MapTemplate distance(rows, std::vector<int>(cols, infinity));
-        std::vector<std::vector<Coord>> parent(rows, std::vector<Coord>(cols, {-1, -1}));
-        std::priority_queue<Node, std::vector<Node>, std::greater<Node>> pending;
-        distance[from.first][from.second] = 0;
-        pending.push({0, from});
-
-        while (!pending.empty()) {
-            const Node current = pending.top();
-            pending.pop();
-            if (current.cost != distance[current.pos.first][current.pos.second]) continue;
-            if (current.pos == to) break;
-            for (Coord delta: {Coord{-1, 0}, Coord{1, 0}, Coord{0, -1}, Coord{0, 1}}) {
-                const Coord neighbor{current.pos.first + delta.first, current.pos.second + delta.second};
-                if (neighbor.first < 0 || neighbor.first >= rows || neighbor.second < 0 || neighbor.second >= cols) continue;
-                const int owner = plan.sectorForCell[neighbor.first][neighbor.second];
-                if (neighbor != world.homeCoordinates && owner != sector && owner != adjacent) continue;
-                const int cost = current.cost + 1 + std::abs(world.terrainMap[current.pos.first][current.pos.second] -
-                                                              world.terrainMap[neighbor.first][neighbor.second]);
-                if (cost >= distance[neighbor.first][neighbor.second]) continue;
-                distance[neighbor.first][neighbor.second] = cost;
-                parent[neighbor.first][neighbor.second] = current.pos;
-                pending.push({cost, neighbor});
-            }
-        }
-        if (distance[to.first][to.second] == infinity) return {};
-        std::vector<Coord> path;
-        for (Coord cell = to; cell != from; cell = parent[cell.first][cell.second]) path.push_back(cell);
-        path.push_back(from);
-        std::reverse(path.begin(), path.end());
-        return path;
+    std::vector<Coord> sectorPath(const AntWorld &world, Coord from, Coord to,
+                                  [[maybe_unused]] int sector, [[maybe_unused]] int adjacent = -1) {
+        // Sector ownership limits targets, not transit: some sectors have no cardinal exit from home.
+        return shortestPath(world.terrainMap, from, to);
     }
 
     void moveV2Segment(AntWorld &world, Ant &ant, const std::vector<Coord> &path, int energyFloor = 0) {
