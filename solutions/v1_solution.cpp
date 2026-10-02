@@ -37,6 +37,7 @@ namespace {
         std::vector<MapTemplate> scanned;
         std::vector<std::vector<Coord>> rememberedFood;
         std::vector<int> sectorForAnt;
+        //Maps each board cell to its assigned setctor
         MapTemplate sectorForCell;
     };
 
