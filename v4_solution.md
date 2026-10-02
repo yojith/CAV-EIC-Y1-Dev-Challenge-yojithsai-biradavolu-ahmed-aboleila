@@ -1,13 +1,54 @@
-# V4 solution proposal
+# V4: sector search, opportunistic food collection
 
-V4 should test **soft sector ownership**, not another handoff scheme. V1 already chooses visible, remembered food by the energy cost of reaching it and returning home. V4 keeps that safety check, but lets an ant collect affordable food outside its assigned sector when it sees it. Sectors remain a starting bias so ants do not all search in the same direction.
+V4 is V1 with one restriction removed: **an ant may collect food outside its assigned sector if its own scan has found it and it can afford the trip home**. The ant still searches *only its assigned sector* when it has no affordable known food. It does not patrol other sectors, communicate food coordinates, or use pheromones.
 
-- Run all ants each turn, as in V1. Each ant keeps its own scanned-cell map and remembered food; it never reads food outside `foodScan()` or another ant's memory.
-- If carrying food, return home. Otherwise, prefer an affordable remembered food item with the lowest `current -> food -> home` terrain cost, regardless of sector.
-- If no remembered food is affordable, choose a reachable search waypoint by **new cells revealed per unit of travel energy**. Give cells in the ant's assigned sector a modest priority, but allow another sector when its own has no useful waypoint. A waypoint is useful only if its 7-by-7 scan covers at least one cell that this ant has not scanned.
-- Keep enough energy to return home from a search waypoint. Re-scan and re-plan after moving; do not assume food exists in unseen cells.
-- Do not add pheromones to the first V4 implementation. At 40% food density, they may cost more travel than they save. If benchmarks show sparse maps are weak, try one clearly defined marker meaning (for example, a visible food cluster that the marking ant cannot afford), and compare with pheromones disabled.
+Think of sectors as search assignments, not fences. If an ant scanning near a sector boundary sees food just across it, V1 ignores that food; V4 may take it. For example, an east-sector ant with 8 energy can collect west-sector food when getting there costs 2 energy and returning home costs 3. This spends less time walking to an assigned search waypoint when a deliverable food item is already known.
 
-The hypothesis is that V1's hard sector food filter and fixed-distance scan queue waste opportunities, especially when an ant has energy left but its own sector is already covered. V4 should be judged against V1/V2/V3 on identical seeds, board sizes, ant counts, and food densities. Compare both raw score and fraction of initial food delivered; do not tune solely to seed `12345`.
+## What each ant knows
 
-This is a proposal only. No V4 strategy code is implemented yet.
+- All ants are given the terrain and home coordinate for path-cost calculations. The terrain map is not discovered by scanning.
+- Each ant has its **own** list of scanned cells and remembered food coordinates. A 7-by-7 `foodScan()` adds currently visible food to that ant's memory. A remembered food coordinate is removed if a later scan of that location finds it empty.
+- Food an ant has never scanned is unknown to it, even though the simulator holds the full food map. No ant reads another ant's memories. The `Plan` object stores these memories in separate slots by ant ID.
+
+## Initialization
+
+V4 uses V1's setup. Sort all non-home cells by angle around home and split them into equal-*cell-count* sectors. Within each sector, queue cells by increasing terrain-aware cost from home (then angle and coordinates). Give the highest-energy ants the sectors with the largest maximum round-trip waypoint cost. `USE_ANGLE_RANKING=1` substitutes narrowest-angle-first sector ranking; `USE_SMART_SCANNING=1` (the default) skips queued cells already covered by that ant's own scan.
+
+## One forage turn
+
+```text
+for each ant:                         # every ant acts once per forage() call
+    mark this ant's current 7x7 area as scanned
+    visibleFood = foodScan()          # only the scan reveals food
+    remove remembered food now visible but no longer present
+    remember every currently visible food location, including other sectors
+
+    if ant is carrying food:
+        move toward home
+        continue
+
+    affordableFood = []
+    for food in this ant's remembered food:
+        deliveryCost = shortest_path_cost(ant.position, food)
+                     + shortest_path_cost(food, home)
+        if deliveryCost <= ant.energy:
+            affordableFood.append((deliveryCost, food))
+
+    if affordableFood is not empty:
+        move to the food with the smallest deliveryCost
+        forget that coordinate after the move
+        continue                         # pickup occurs in move(); deliver next turn
+
+    waypoint = first cell in this ant's ordered sector queue
+               not already covered by its scan (when smart scanning is on)
+    if waypoint exists and
+       shortest_path_cost(ant.position, waypoint)
+         + shortest_path_cost(waypoint, home) <= ant.energy:
+        move to waypoint                # scan again on the next forage turn
+    else if ant is not home:
+        move toward home
+```
+
+One ant may collect food from another's sector, but the other ant is not notified; its own later scan must discover that the food is gone. Shortest paths may also cross sector boundaries. When an ant reaches home carrying food, the simulator credits the score. The affordability check preserves enough energy for the planned return trip, but it does not guarantee that all food can be delivered or that the ant spends all its energy.
+
+`USE_V4_STRATEGY=1` enables V4; otherwise the build defaults to V1. The original hypothesis was that V1's hard sector filter discards useful nearby food. V4 keeps the same search queue and adds no pheromone or handoff behavior, so benchmark differences mainly measure that relaxed food choice.

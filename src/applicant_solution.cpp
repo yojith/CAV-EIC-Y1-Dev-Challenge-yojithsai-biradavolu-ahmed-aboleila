@@ -34,13 +34,18 @@
 #define USE_V3_STRATEGY 0
 #endif
 
+// V4 keeps V1's search sweep but collects affordable visible food across sector boundaries.
+#ifndef USE_V4_STRATEGY
+#define USE_V4_STRATEGY 0
+#endif
+
 // V3 only: 0 passes food into the next sector; 1 follows home and leaves a pheromone.
 #ifndef V3_HOME_PHEROMONE
 #define V3_HOME_PHEROMONE 0
 #endif
 
-#if USE_V2_STRATEGY && USE_V3_STRATEGY
-#error Select either V2 or V3, not both.
+#if (USE_V2_STRATEGY + USE_V3_STRATEGY + USE_V4_STRATEGY) > 1
+#error Select only one of V2, V3, or V4.
 #endif
 
 #ifndef WAIT_FOR_ENTER
@@ -100,9 +105,12 @@ namespace {
         const std::size_t slots = static_cast<std::size_t>(std::max_element(
             world.ants.begin(), world.ants.end(), [](const Ant &a, const Ant &b) { return a.id < b.id; })->id + 1);
         std::vector<Coord> cells;
+        MapTemplate homeCosts = shortestDistances(world.terrainMap, world.homeCoordinates);
         for (int row = 0; row < static_cast<int>(world.terrainMap.size()); ++row) {
             for (int col = 0; col < static_cast<int>(world.terrainMap.front().size()); ++col) {
-                if (Coord{row, col} != world.homeCoordinates) cells.emplace_back(row, col);
+                if (Coord{row, col} != world.homeCoordinates) {
+                    cells.emplace_back(row, col);
+                }
             }
         }
 
@@ -129,13 +137,13 @@ namespace {
                                       angleFrom(world.homeCoordinates, sectors[sector].front());
                 for (Coord waypoint: sectors[sector]) {
                     sectorRoundTrip[sector] = std::max(
-                        sectorRoundTrip[sector], 2 * pathCost(world.terrainMap, world.homeCoordinates, waypoint));
+                        sectorRoundTrip[sector], 2 * homeCosts[waypoint.first][waypoint.second]);
                 }
             }
             std::sort(sectors[sector].begin(), sectors[sector].end(), [&](Coord a, Coord b) {
-                return std::tuple{pathCost(world.terrainMap, world.homeCoordinates, a),
+                return std::tuple{homeCosts[a.first][a.second],
                                   angleFrom(world.homeCoordinates, a), a.first, a.second} <
-                       std::tuple{pathCost(world.terrainMap, world.homeCoordinates, b),
+                       std::tuple{homeCosts[b.first][b.second],
                                   angleFrom(world.homeCoordinates, b), b.first, b.second};
             });
         }
@@ -198,7 +206,7 @@ namespace {
         }), memory.end());
 
         for (Coord food: visible) {
-            if (plan.sectorForCell[food.first][food.second] == plan.sectorForAnt[ant.id] &&
+            if ((USE_V4_STRATEGY || plan.sectorForCell[food.first][food.second] == plan.sectorForAnt[ant.id]) &&
                 std::find(memory.begin(), memory.end(), food) == memory.end()) {
                 memory.push_back(food);
             }

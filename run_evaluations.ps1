@@ -12,7 +12,8 @@ $versions = @(
     @{ Name = 'v1'; Flags = '' },
     @{ Name = 'v2'; Flags = '/DUSE_V2_STRATEGY=1' },
     @{ Name = 'v3-next'; Flags = '/DUSE_V3_STRATEGY=1' },
-    @{ Name = 'v3-home'; Flags = '/DUSE_V3_STRATEGY=1 /DV3_HOME_PHEROMONE=1' }
+    @{ Name = 'v3-home'; Flags = '/DUSE_V3_STRATEGY=1 /DV3_HOME_PHEROMONE=1' },
+    @{ Name = 'v4'; Flags = '/DUSE_V4_STRATEGY=1' }
 )
 
 foreach ($version in $versions) {

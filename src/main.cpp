@@ -49,17 +49,17 @@ int main(int argc, char *argv[]) {
     AntWorld gameInstance = AntWorld(seed, rows, cols, antCount, foodDensity);
 
     std::vector<long long> roundTripCosts;
+    const MapTemplate homeCosts = shortestDistances(gameInstance.terrainMap, gameInstance.homeCoordinates);
     for (std::size_t row = 0; row < gameInstance.foodMap.size(); ++row) {
         for (std::size_t col = 0; col < gameInstance.foodMap[row].size(); ++col) {
             if (gameInstance.foodMap[row][col] != 1) continue;
-            const Coord food{static_cast<int>(row), static_cast<int>(col)};
-            const auto route = shortestPath(gameInstance.terrainMap, gameInstance.homeCoordinates, food);
-            roundTripCosts.push_back(2LL * calculatePathCost(gameInstance.terrainMap, route));
+            roundTripCosts.push_back(2LL * homeCosts[row][col]);
         }
     }
     std::sort(roundTripCosts.begin(), roundTripCosts.end());
-    long long pooledEnergy = std::accumulate(gameInstance.ants.begin(), gameInstance.ants.end(), 0LL,
-                                             [](long long total, const Ant &ant) { return total + ant.energy; });
+    const long long initialEnergy = std::accumulate(gameInstance.ants.begin(), gameInstance.ants.end(), 0LL,
+                                                     [](long long total, const Ant &ant) { return total + ant.energy; });
+    long long pooledEnergy = initialEnergy;
     int energyUpperBound = 0;
     for (long long cost: roundTripCosts) {
         if (cost > pooledEnergy) break;
@@ -92,4 +92,14 @@ int main(int argc, char *argv[]) {
     } else {
         printf("Termination reached for unknown reason.");
     }
+    const long long remainingEnergy = std::accumulate(gameInstance.ants.begin(), gameInstance.ants.end(), 0LL,
+                                                       [](long long total, const Ant &ant) { return total + ant.energy; });
+    std::cout << "\nRESULT {\"score\":" << gameInstance.score
+              << ",\"upper_bound\":" << energyUpperBound
+              << ",\"initial_food\":" << roundTripCosts.size()
+              << ",\"initial_energy\":" << initialEnergy
+              << ",\"remaining_energy\":" << remainingEnergy
+              << ",\"steps\":" << stepCount
+              << ",\"stop_reason\":\"" << (gameOver ? "game_over" : idleSteps == 10 ? "idle" : "unknown")
+              << "\"}\n";
 }
