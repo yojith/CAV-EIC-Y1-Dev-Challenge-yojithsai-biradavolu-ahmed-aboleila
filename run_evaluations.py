@@ -14,13 +14,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent
-FLAGS = {
-    "v1": "",
-    "v2": "/DUSE_V2_STRATEGY=1",
-    "v3-next": "/DUSE_V3_STRATEGY=1",
-    "v3-home": "/DUSE_V3_STRATEGY=1 /DV3_HOME_PHEROMONE=1",
-    "v4": "/DUSE_V4_STRATEGY=1",
-}
+SOLUTIONS = ("v1", "v2", "v3_1", "v3_2", "v4")
 FIELDS = ["run_id", "seed", "size", "ants", "density_percent", "variant", "score",
           "upper_bound", "initial_food", "initial_energy", "remaining_energy", "steps",
           "stop_reason", "elapsed_seconds"]
@@ -44,7 +38,7 @@ def read_plan(path):
             int(ants["increase_per_size_step"]) < 0:
         raise ValueError("Invalid density or ant-count rule")
     variants = plan["variants"]
-    if not variants or len(variants) != len(set(variants)) or any(v not in FLAGS for v in variants):
+    if not variants or len(variants) != len(set(variants)) or any(v not in SOLUTIONS for v in variants):
         raise ValueError("Variants must be distinct and supported")
     return plan, seeds, sizes, densities, variants
 
@@ -63,8 +57,9 @@ def worlds(plan, seeds, sizes, densities):
 def signature(plan, generator):
     digest = hashlib.sha256(json.dumps(plan, sort_keys=True).encode("utf-8"))
     digest.update(generator.encode("utf-8"))
-    for name in ("CMakeLists.txt", "src/main.cpp", "src/applicant_solution.cpp", "src/antworld.cpp",
-                 "src/useable_functions.cpp", "include/antworld.h", "include/utility_functions.h"):
+    for name in ("CMakeLists.txt", "src/main.cpp", "src/antworld.cpp", "src/useable_functions.cpp",
+                 "include/antworld.h", "include/utility_functions.h",
+                 *(f"solutions/{variant}_solution.cpp" for variant in plan["variants"])):
         digest.update(name.encode("utf-8"))
         digest.update((ROOT / name).read_bytes())
     return digest.hexdigest()[:16]
@@ -72,9 +67,10 @@ def signature(plan, generator):
 
 def build(variant, generator):
     directory = ROOT / f"build-eval-{variant}"
-    flags = f"/EHsc /DWAIT_FOR_ENTER=0 /DENABLE_VISUALIZER=0 {FLAGS[variant]}"
+    flags = "/EHsc"
     configure = ["cmake", "-S", str(ROOT), "-B", str(directory), "-G", generator,
-                 "-A", "x64", f"-DCMAKE_CXX_FLAGS={flags}", "-DBUILD_TESTING=OFF"]
+                 "-A", "x64", f"-DSOLUTION={variant}", f"-DCMAKE_CXX_FLAGS={flags}",
+                 "-DBUILD_TESTING=OFF"]
     for command in (configure, ["cmake", "--build", str(directory), "--config", "Release",
                                 "--target", "dev_challenge"]):
         result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -149,7 +145,7 @@ def summarize(rows, variants):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=ROOT / "evaluation_grid.json")
-    parser.add_argument("--output", type=Path, default=ROOT / "evaluation_results.csv")
+    parser.add_argument("--output", type=Path, default=ROOT / "evaluation_results_by_solution.csv")
     parser.add_argument("--generator", default="Visual Studio 16 2019")
     parser.add_argument("--timeout", type=int, default=120, help="seconds per simulation; 0 disables wall-clock timeout")
     parser.add_argument("--workers", type=int, default=1, help="worlds evaluated concurrently")

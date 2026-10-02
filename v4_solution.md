@@ -51,4 +51,4 @@ for each ant:                         # every ant acts once per forage() call
 
 One ant may collect food from another's sector, but the other ant is not notified; its own later scan must discover that the food is gone. Shortest paths may also cross sector boundaries. When an ant reaches home carrying food, the simulator credits the score. The affordability check preserves enough energy for the planned return trip, but it does not guarantee that all food can be delivered or that the ant spends all its energy.
 
-`USE_V4_STRATEGY=1` enables V4; otherwise the build defaults to V1. The original hypothesis was that V1's hard sector filter discards useful nearby food. V4 keeps the same search queue and adds no pheromone or handoff behavior, so benchmark differences mainly measure that relaxed food choice.
+`-DSOLUTION=v4` compiles `solutions/v4_solution.cpp`; the no-option build compiles `src/applicant_solution.cpp` (V1). The original hypothesis was that V1's hard sector filter discards useful nearby food. V4 keeps the same search queue and adds no pheromone or handoff behavior, so benchmark differences mainly measure that relaxed food choice.

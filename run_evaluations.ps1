@@ -8,18 +8,12 @@ $repoRoot = $PSScriptRoot
 $cases = Get-Content -LiteralPath $CasesPath -Raw | ConvertFrom-Json
 if ($cases.Count -eq 0) { throw 'The case file must contain a nonempty JSON array.' }
 
-$versions = @(
-    @{ Name = 'v1'; Flags = '' },
-    @{ Name = 'v2'; Flags = '/DUSE_V2_STRATEGY=1' },
-    @{ Name = 'v3-next'; Flags = '/DUSE_V3_STRATEGY=1' },
-    @{ Name = 'v3-home'; Flags = '/DUSE_V3_STRATEGY=1 /DV3_HOME_PHEROMONE=1' },
-    @{ Name = 'v4'; Flags = '/DUSE_V4_STRATEGY=1' }
-)
+$versions = @('v1', 'v2', 'v3_1', 'v3_2', 'v4') | ForEach-Object { @{ Name = $_ } }
 
 foreach ($version in $versions) {
     $version.BuildDir = Join-Path $repoRoot "build-eval-$($version.Name)"
-    $flags = "/EHsc /DWAIT_FOR_ENTER=0 /DENABLE_VISUALIZER=0 $($version.Flags)"
-    & cmake -S $repoRoot -B $version.BuildDir -G $Generator -A x64 "-DCMAKE_CXX_FLAGS=$flags" -DBUILD_TESTING=OFF | Out-Null
+    $flags = '/EHsc'
+    & cmake -S $repoRoot -B $version.BuildDir -G $Generator -A x64 "-DSOLUTION=$($version.Name)" "-DCMAKE_CXX_FLAGS=$flags" -DBUILD_TESTING=OFF | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "CMake configuration failed for $($version.Name)." }
     & cmake --build $version.BuildDir --config Release --target dev_challenge | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Build failed for $($version.Name)." }

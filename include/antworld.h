@@ -39,14 +39,11 @@ public:
 
 class AntWorld {
 public:
-    AntWorld(uint32_t seed, int mapSize_x = 15, int mapSize_y = 15, int antCount = 8,
-             double foodDensity = 0.4);
+    AntWorld(uint32_t seed, int mapSize_x = 15, int mapSize_y = 15, int antCount = 8, double foodDensity = 0.4);
 
     bool worldStep();
 
     void forage();
-
-    void renderWorld(bool waitForEnter);
 
     void updateWorld();
 

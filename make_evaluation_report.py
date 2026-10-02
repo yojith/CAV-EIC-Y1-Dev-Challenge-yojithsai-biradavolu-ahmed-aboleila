@@ -5,6 +5,7 @@ import csv
 import html
 import io
 import statistics
+import sys
 from collections import defaultdict
 from pathlib import Path
 
@@ -18,7 +19,8 @@ from matplotlib.ticker import PercentFormatter
 ROOT = Path(__file__).resolve().parent
 SOURCE = ROOT / "evaluation_results.csv"
 OUTPUT = ROOT / "evaluation_report.html"
-VARIANTS = ("v1", "v2", "v3-next", "v3-home", "v4")
+VARIANTS = ("v1", "v2", "v3_1", "v3_2", "v4")
+LABELS = {"v1": "V1", "v2": "V2", "v3_1": "V3.1", "v3_2": "V3.2", "v4": "V4"}
 COLORS = dict(zip(VARIANTS, ("#277da1", "#f8961e", "#43aa8b", "#b56576", "#603f8b")))
 
 
@@ -41,7 +43,7 @@ def line_chart(rows, key, title, xlabel, *, size=None, max_ants=None):
     fig, ax = plt.subplots(figsize=(8, 4.5))
     for variant in VARIANTS:
         xs = sorted(x for name, x in data if name == variant)
-        ax.plot(xs, [statistics.fmean(data[variant, x]) for x in xs], label=variant,
+        ax.plot(xs, [statistics.fmean(data[variant, x]) for x in xs], label=LABELS[variant],
                 color=COLORS[variant], marker="o", markersize=4, linewidth=2)
     ax.set(title=title, xlabel=xlabel, ylabel="Mean score / optimistic bound")
     ax.yaxis.set_major_formatter(PercentFormatter(1))
@@ -75,15 +77,17 @@ def heatmap(paired, sizes, densities):
 
 
 def main():
-    with SOURCE.open(newline="", encoding="utf-8") as handle:
+    source = Path(sys.argv[1]) if len(sys.argv) > 1 else SOURCE
+    with source.open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
     if not rows:
-        raise ValueError(f"No rows in {SOURCE}")
+        raise ValueError(f"No rows in {source}")
     numeric = ("seed", "size", "ants", "density_percent", "score", "upper_bound",
                "initial_food", "remaining_energy")
     for row in rows:
         for field in numeric:
             row[field] = int(row[field])
+        row["variant"] = {"v3-next": "v3_1", "v3-home": "v3_2"}.get(row["variant"], row["variant"])
     paired = defaultdict(dict)
     for row in rows:
         key = tuple(row[field] for field in ("seed", "size", "ants", "density_percent"))
@@ -107,7 +111,7 @@ def main():
         ratio = [row["score"] / row["upper_bound"] for row in group if row["upper_bound"]]
         wins = sum(grouped[variant]["score"] == max(item["score"] for item in grouped.values())
                    for grouped in paired.values())
-        cells = (variant, f"{statistics.fmean(ratio):.1%}",
+        cells = (LABELS[variant], f"{statistics.fmean(ratio):.1%}",
                  f"{statistics.fmean(row['score'] for row in group):.2f}",
                  f"{statistics.fmean(row['upper_bound'] - row['score'] for row in group):.2f}",
                  f"{statistics.fmean(row['remaining_energy'] for row in group):.1f}",
@@ -139,7 +143,7 @@ th:first-child,td:first-child{{text-align:left}}th{{background:#eef2f6}}
 @media(max-width:700px){{main{{padding:12px}}section{{padding:10px}}}}
 </style></head><body><main>
 <h1>Ant strategy evaluation</h1>
-<p>{len(paired):,} identical worlds per variant; {len(rows):,} runs total. Seeds {min(seeds)}–{max(seeds)}, square boards {min(sizes)}–{max(sizes)}, food densities {min(densities)}–{max(densities)}%, and {min(ants)}–{max(ants)} ants. Source: <code>evaluation_results.csv</code>.</p>
+<p>{len(paired):,} identical worlds per variant; {len(rows):,} runs total. Seeds {min(seeds)}–{max(seeds)}, square boards {min(sizes)}–{max(sizes)}, food densities {min(densities)}–{max(densities)}%, and {min(ants)}–{max(ants)} ants. Source: <code>{html.escape(source.name)}</code>.</p>
 <section><h2>Overall comparison</h2><table><thead><tr><th>Variant</th><th>Score / bound</th><th>Mean score</th><th>Mean gap</th><th>Energy left</th><th>Wins including ties</th></tr></thead><tbody>{''.join(table_rows)}</tbody></table></section>
 <p>Score / bound is averaged per world; higher is better. The bound assumes known initial food locations and pooled energy, so it is optimistic, not an attainable guarantee. Mean gap is bound minus delivered food. Wins count ties. The 1–10-ant chart includes every board size at each count; the 50×50 chart shows 1–18 ants without changing board size. Board-size averages follow the configured ant-count range, which grows with board size. In the heatmap, blue means V4 delivers more than V2; red means less.</p>
 <div class="grid">{cards}</div>

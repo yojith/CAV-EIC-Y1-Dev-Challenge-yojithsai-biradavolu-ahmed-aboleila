@@ -11,9 +11,19 @@ set(FRAMEWORK_SOURCES
         src/useable_functions.cpp
 )
 
+set(SOLUTION "applicant" CACHE STRING "Solution to compile: applicant, v1, v2, v3_1, v3_2, or v4")
+set_property(CACHE SOLUTION PROPERTY STRINGS applicant v1 v2 v3_1 v3_2 v4)
+if (SOLUTION STREQUAL "applicant")
+    set(SOLUTION_SOURCE src/applicant_solution.cpp)
+elseif (SOLUTION MATCHES "^(v1|v2|v3_1|v3_2|v4)$")
+    set(SOLUTION_SOURCE solutions/${SOLUTION}_solution.cpp)
+else ()
+    message(FATAL_ERROR "Unknown SOLUTION '${SOLUTION}'. Choose applicant, v1, v2, v3_1, v3_2, or v4.")
+endif ()
+
 add_executable(dev_challenge
         src/main.cpp
-        src/applicant_solution.cpp
+        ${SOLUTION_SOURCE}
         ${FRAMEWORK_SOURCES}
 )
 

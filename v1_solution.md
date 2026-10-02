@@ -120,15 +120,6 @@ for rank in 0 .. min(sectorOrder.size(), antOrder.size()) - 1:
 
 This gives the narrowest angular sector to the highest-energy ant. Compare its score over the same seeds against the Dijkstra-ranked version; keep it only if it wins.
 
-## Terminal visualizer
-
-- Keep it in `src/applicant_solution.cpp` as a local debug helper; do not add a graphics dependency or edit `CMakeLists.txt`.
-- At the start of `forage()`, clear the terminal and render the current 15-by-15 grid using ANSI escape codes.
-- Draw terrain heights `0`, `1`, and `2` with three background colours; overlay home as `H`, food as `F`, and ants as `A` (ants render last).
-- Print one status line with step number, score, and each ant's coordinate, energy, and carrying state.
-- It is the normal game display; tests keep it disabled so their output remains readable.
-- It renders one frame per `worldStep()`, not individual movement cells, because `move()` completes its Dijkstra route in one call.
-
 ## Sources
 
 - J. M. Diaz-Banez, P. Perez-Lantero, and R. Fabila-Monroy, ["On the Number of Radial Orderings of Planar Point Sets"](https://arxiv.org/abs/1204.0547): defines radial ordering as the circular order of points by their angle around an observation point and defines a `k`-fan as `k` rays from one center.

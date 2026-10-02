@@ -1,6 +1,6 @@
 //
 // Created by dusan on 9/15/26.
-// Default submission (V1): each ant searches an assigned sector.
+// V1: each ant searches an assigned sector and collects food it has seen there.
 //
 
 #include "../include/antworld.h"

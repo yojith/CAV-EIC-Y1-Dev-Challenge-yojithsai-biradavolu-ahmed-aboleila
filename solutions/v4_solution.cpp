@@ -1,6 +1,6 @@
 //
 // Created by dusan on 9/15/26.
-// Default submission (V1): each ant searches an assigned sector.
+// V4: search assigned sectors, but collect affordable visible food anywhere.
 //
 
 #include "../include/antworld.h"
@@ -189,10 +189,9 @@ namespace {
             return inCurrentScan && std::find(visible.begin(), visible.end(), food) == visible.end();
         }), memory.end());
 
-        // V1 only remembers food inside this ant's assigned sector.
+        // V4 remembers all visible food, even outside the assigned sector.
         for (Coord food: visible) {
-            if (plan.sectorForCell[food.first][food.second] == plan.sectorForAnt[ant.id] &&
-                std::find(memory.begin(), memory.end(), food) == memory.end()) {
+            if (std::find(memory.begin(), memory.end(), food) == memory.end()) {
                 memory.push_back(food);
             }
         }
