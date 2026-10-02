@@ -40,6 +40,16 @@ cmake --build build-v3-home-compare --config Debug --target dev_challenge
 
 All modes stop after 10 consecutive turns in which no ant spends energy. `USE_V2_STRATEGY` and `USE_V3_STRATEGY` cannot both be `1`.
 
+## Compare strategies across predefined cases
+
+Edit [`evaluation_cases.json`](evaluation_cases.json) to add cases with `name`, `seed`, `rows`, `cols`, `ants`, and `foodDensity` (a fraction from `0` to `1`). Then run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\run_evaluations.ps1
+```
+
+The runner builds V1, V2, V3 next-sector, and V3 home-pheromone once each, with the visualizer disabled, then prints each case's score, energy-only upper bound, and percentage of initial food delivered. The bound uses initial food positions and pooled ant energy but ignores search energy and per-ant limits; it is a benchmark, not information given to the strategy. It does not modify `CMakeLists.txt` or the normal no-argument run. To use another JSON file, pass `-CasesPath .\my_cases.json`.
+
 ## Angle-ranked sectors
 
 ```powershell

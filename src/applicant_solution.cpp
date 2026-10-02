@@ -679,7 +679,8 @@ namespace {
         constexpr const char *antColors[] = {"\x1b[38;5;226m", "\x1b[38;5;51m", "\x1b[38;5;201m",
                                              "\x1b[38;5;231m", "\x1b[38;5;214m", "\x1b[38;5;159m"};
 
-        std::cout << "\x1b[2J\x1b[HFrame " << ++frame << " | Score: " << world.score << '\n';
+        if (frame != 0) std::cout << "\x1b[2J\x1b[H";
+        std::cout << "Frame " << ++frame << " | Score: " << world.score << '\n';
         for (std::size_t row = 0; row < world.terrainMap.size(); ++row) {
             for (std::size_t col = 0; col < world.terrainMap[row].size(); ++col) {
                 const Coord cell{static_cast<int>(row), static_cast<int>(col)};
