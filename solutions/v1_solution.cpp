@@ -40,6 +40,7 @@ namespace {
         std::vector<MapTemplate> scanned;
         std::vector<std::vector<Coord>> rememberedFood;
         std::vector<int> sectorForAnt;
+        //Maps each board cell to its assigned setctor
         MapTemplate sectorForCell;
         // Original ant indices stay stable even when the framework erases dead ants.
         std::vector<int> liveIds;
