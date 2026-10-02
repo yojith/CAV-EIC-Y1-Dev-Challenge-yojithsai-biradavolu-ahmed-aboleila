@@ -3,9 +3,39 @@
 #include <cmath>
 #include <limits>
 #include <numeric>
+#include <queue>
+#include <functional>
 #include <string>
 #include <vector>
 #include "../include/antworld.h"
+
+// Diagnostic only: this never supplies food locations or targets to forage().
+namespace {
+    MapTemplate homeDistances(const MapTemplate &grid, Coord start) {
+        const int rows = static_cast<int>(grid.size());
+        const int cols = static_cast<int>(grid.front().size());
+        MapTemplate distance(rows, std::vector<int>(cols, std::numeric_limits<int>::max()));
+        std::priority_queue<Node, std::vector<Node>, std::greater<Node>> queue;
+        distance[start.first][start.second] = 0;
+        queue.push({0, start});
+        for (; !queue.empty(); queue.pop()) {
+            const Node current = queue.top();
+            const auto [row, col] = current.pos;
+            if (current.cost != distance[row][col]) continue;
+            for (Coord step: {Coord{-1, 0}, Coord{1, 0}, Coord{0, -1}, Coord{0, 1}}) {
+                const int nextRow = row + step.first;
+                const int nextCol = col + step.second;
+                if (nextRow < 0 || nextRow >= rows || nextCol < 0 || nextCol >= cols) continue;
+                const int cost = current.cost + 1 + std::abs(grid[row][col] - grid[nextRow][nextCol]);
+                if (cost < distance[nextRow][nextCol]) {
+                    distance[nextRow][nextCol] = cost;
+                    queue.push({cost, {nextRow, nextCol}});
+                }
+            }
+        }
+        return distance;
+    }
+}
 
 /** @brief The main function that will run the game. If you are not using a IDE gui, this is the executable you want to target when you build
  */
@@ -54,7 +84,7 @@ int main(int argc, char *argv[]) {
 
     // ---------- Added on this branch: energy-only score bound ----------
     std::vector<long long> roundTripCosts;
-    const MapTemplate homeCosts = shortestDistances(gameInstance.terrainMap, gameInstance.homeCoordinates);
+    const MapTemplate homeCosts = homeDistances(gameInstance.terrainMap, gameInstance.homeCoordinates);
     for (std::size_t row = 0; row < gameInstance.foodMap.size(); ++row) {
         for (std::size_t col = 0; col < gameInstance.foodMap[row].size(); ++col) {
             if (gameInstance.foodMap[row][col] != 1) continue;

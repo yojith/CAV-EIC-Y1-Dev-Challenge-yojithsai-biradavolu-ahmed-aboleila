@@ -1,11 +1,12 @@
 # V1 solution rough draft
 
-- Implement only `AntWorld::forage()` in `src/applicant_solution.cpp`; leave framework files untouched.
+- Keep `AntWorld::forage()`, strategy helpers, and per-ant memory in `src/applicant_solution.cpp`; leave the game framework untouched.
 - Assign each ant an initial outward sector/waypoint from `homeCoordinates`.
 - If carrying food, call `returnHome()`.
-- Otherwise call `foodScan()`, choose a visible food whose trip plus return cost fits remaining energy, then `move()` to it.
-- If no food is visible, move toward the next sector waypoint only if the ant can still return home.
-- Use the provided Dijkstra helpers for energy checks; do not read global `foodMap` except through `foodScan()`.
+- Otherwise call `foodScan()`, remember food found by that ant, and pursue the remembered food with the cheapest path from its current position, even when it cannot reach the food or return home.
+- If no food is remembered, move toward the next sector waypoint without reserving energy for the return trip.
+- Use the solution's own home-distance calculation and the provided path helpers; do not inspect global `foodMap` except through `foodScan()`.
+- After 10 consecutive turns without energy use, use ordinary adjacent and homeward moves to spend remaining energy. An ant can still get stuck with positive energy if every adjacent move is unaffordable.
 - Skip pheromones in v1; add one-per-ant "productive area" markers only if benchmarks show sector search needs help.
 - Test fixed seed `12345`, then several random seeds and compare final scores.
 
@@ -35,7 +36,6 @@ cells = every map cell except homeCoordinates
 # Put cells in circular order around home.  The tie-breakers make the result repeatable.
 sort cells by (
     normalized_angle(atan2(cell.row - home.row, cell.col - home.col)), # (polar coordinate sorting)
-    squared_distance(cell, home),
     cell.row,
     cell.col
 )
@@ -72,34 +72,31 @@ for sector in 0 .. n - 1:
 
 The boundary between two sectors is the angle halfway between their adjacent cells. This is a discrete adaptation of radial ordering: it balances integer cell counts (not continuous geometric area) with a workload difference of at most one cell.
 
-Each ant consumes its sector queue from nearest to farthest. It scans at each waypoint, collects visible affordable food, returns home when carrying food, and resumes at the first unvisited waypoint. Do not visit every cell: `foodScan()` already covers a 7-by-7 square, so retain only waypoints that add previously unscanned cells to the sector.
+Each ant consumes its sector queue from nearest to farthest. It scans at each waypoint, pursues the nearest remembered food, returns home when carrying food, and resumes at the next queued waypoint. With smart scanning, it skips cells already covered by its own 7-by-7 scan; without it, it visits every ordered cell.
 
 `USE_SMART_SCANNING` selects the sweep method: `0` visits every ordered sector cell; `1` skips a queued cell when that ant's own 7-by-7 scan already covered it.
 
 ## Assign longer sectors to higher-energy ants
 
-Do not rank sectors by wedge angle. A narrow wedge often reaches farther toward a corner, but the actual terrain cost can differ. Rank using the greatest round-trip Dijkstra cost of any scan waypoint in the sector:
+Do not rank sectors by wedge angle. A narrow wedge often reaches farther toward a corner, but the actual terrain cost can differ. Rank using the greatest round-trip Dijkstra cost of any cell in the sector, before smart scanning skips waypoints:
 
 ```text
 for each sector in sectors:
     sectorCost[sector] = 0
 
-    for each waypoint in scanWaypoints[sector]:
-        outbound = calculatePathCost(
-            terrainMap,
-            shortestPath(terrainMap, homeCoordinates, waypoint)
-        )
+    for each cell in sectors[sector]:
+        outbound = homeDistances[cell]  # calculated in this solution file
         roundTrip = 2 * outbound    # edge costs are symmetric
         sectorCost[sector] = max(sectorCost[sector], roundTrip)
 
-sectorOrder = sector indices sorted by (sectorCost descending, sector index ascending)
-antOrder = ant indices sorted by (ants[index].energy descending, index ascending)
+sectorOrder = sector indices sorted by (sectorCost descending, sector index descending)
+antOrder = ant indices sorted by (ants[index].energy descending, index descending)
 
 for rank in 0 .. min(sectorOrder.size(), antOrder.size()) - 1:
     assignedSector[antOrder[rank]] = sectorOrder[rank]
 ```
 
-The first ant in `antOrder` has the most starting energy and receives the sector with the highest required round-trip cost. If every sector has the same cost, the index tie-breaker makes the assignment repeatable.
+The first ant in `antOrder` has the most starting energy and receives the sector with the highest required round-trip cost. Equal costs and equal energies favour higher indices.
 
 ### Alternative experiment: rank by angular width
 
@@ -112,7 +109,7 @@ for each sector in sectors:
     sectorWidth[sector] = wrapped_difference(lastAngle, firstAngle)
 
 sectorOrder = sector indices sorted by (sectorWidth ascending, sector index ascending)
-antOrder = ant indices sorted by (ants[index].energy descending, index ascending)
+antOrder = ant indices sorted by (ants[index].energy descending, index descending)
 
 for rank in 0 .. min(sectorOrder.size(), antOrder.size()) - 1:
     assignedSector[antOrder[rank]] = sectorOrder[rank]

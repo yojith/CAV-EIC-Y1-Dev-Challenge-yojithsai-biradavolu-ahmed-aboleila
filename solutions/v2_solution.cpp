@@ -10,6 +10,8 @@
 #include <cstddef>
 #include <limits>
 #include <numbers>
+#include <queue>
+#include <functional>
 #include <utility>
 #include <vector>
 
@@ -26,7 +28,7 @@ namespace {
         Coord home{-1, -1};
         std::size_t rows{};
         std::size_t cols{};
-        // A separate ordered search queue and queue position for each ant ID.
+        // A separate ordered search queue and queue position for each original ant index.
         std::vector<std::vector<Coord>> queues;
         std::vector<std::size_t> nextWaypoint;
         // Each ant has its own scanned-cell map and remembered-food list; no sharing.
@@ -34,9 +36,48 @@ namespace {
         std::vector<std::vector<Coord>> rememberedFood;
         std::vector<int> sectorForAnt;
         MapTemplate sectorForCell;
+        // Original ant indices stay stable even when the framework erases dead ants.
+        std::vector<int> liveIds;
     };
 
     Plan plan;
+
+    MapTemplate homeDistances(const MapTemplate &grid, Coord start) {
+        const int rows = static_cast<int>(grid.size());
+        const int cols = static_cast<int>(grid.front().size());
+        MapTemplate distance(rows, std::vector<int>(cols, std::numeric_limits<int>::max()));
+        std::priority_queue<Node, std::vector<Node>, std::greater<Node>> queue;
+        distance[start.first][start.second] = 0;
+        queue.push({0, start});
+        for (; !queue.empty(); queue.pop()) {
+            const Node current = queue.top();
+            const auto [row, col] = current.pos;
+            if (current.cost != distance[row][col]) continue;
+            for (Coord step: {Coord{-1, 0}, Coord{1, 0}, Coord{0, -1}, Coord{0, 1}}) {
+                const int nextRow = row + step.first;
+                const int nextCol = col + step.second;
+                if (nextRow < 0 || nextRow >= rows || nextCol < 0 || nextCol >= cols) continue;
+                const int cost = current.cost + 1 + std::abs(grid[row][col] - grid[nextRow][nextCol]);
+                if (cost < distance[nextRow][nextCol]) {
+                    distance[nextRow][nextCol] = cost;
+                    queue.push({cost, {nextRow, nextCol}});
+                }
+            }
+        }
+        return distance;
+    }
+
+    int localId(const AntWorld &world, const Ant &ant) {
+        return plan.liveIds[static_cast<std::size_t>(&ant - world.ants.data())];
+    }
+
+    void forgetDeadAnts(const AntWorld &world) {
+        for (std::size_t index = world.ants.size(); index-- > 0;) {
+            if (world.ants[index].energy == 0) {
+                plan.liveIds.erase(plan.liveIds.begin() + static_cast<std::ptrdiff_t>(index));
+            }
+        }
+    }
 
     // V2 runs one ant at a time. This state tracks whose turn it is and its handoff stage.
     struct ForageState {
@@ -68,14 +109,10 @@ namespace {
     // Split all non-home cells into equal-size sectors, then assign one to each ant.
     void makePlan(const AntWorld &world) {
         const std::size_t antCount = world.ants.size();
-        // Ant IDs may have gaps after another ant dies, so size memory by the largest ID.
-        std::size_t slots = 0;
-        for (const Ant &ant: world.ants) {
-            slots = std::max(slots, static_cast<std::size_t>(ant.id + 1));
-        }
+        const std::size_t slots = antCount;
         std::vector<Coord> cells;
         // These costs use public terrain, not hidden food locations.
-        MapTemplate homeCosts = shortestDistances(world.terrainMap, world.homeCoordinates);
+        MapTemplate homeCosts = homeDistances(world.terrainMap, world.homeCoordinates);
         for (int row = 0; row < static_cast<int>(world.terrainMap.size()); ++row) {
             for (int col = 0; col < static_cast<int>(world.terrainMap.front().size()); ++col) {
                 if (Coord{row, col} != world.homeCoordinates) {
@@ -157,12 +194,14 @@ namespace {
             return a > b;
         });
 
-        // Allocate private memory slots by ant ID, then fill their search queues.
+        // Allocate private memory slots by original ant index, then fill their search queues.
         plan = {};
         plan.world = &world;
         plan.home = world.homeCoordinates;
         plan.rows = world.terrainMap.size();
         plan.cols = world.terrainMap.front().size();
+        plan.liveIds.resize(slots);
+        for (std::size_t index = 0; index < slots; ++index) plan.liveIds[index] = static_cast<int>(index);
         plan.queues.resize(slots);
         plan.nextWaypoint.assign(slots, 0);
         plan.scanned.assign(slots, MapTemplate(plan.rows, std::vector<int>(plan.cols, 0)));
@@ -175,7 +214,7 @@ namespace {
         state.explorationTarget.assign(slots, {-1, -1});
         state.visitedPheromone.assign(slots, {});
         for (std::size_t rank = 0; rank < antCount; ++rank) {
-            const std::size_t antId = static_cast<std::size_t>(world.ants[antRank[rank]].id);
+            const std::size_t antId = static_cast<std::size_t>(antRank[rank]);
             const int sector = (sectorRank.front() + static_cast<int>(rank)) % static_cast<int>(antCount);
             state.order.push_back(static_cast<int>(antId));
             plan.queues[antId] = std::move(sectors[sector]);
@@ -187,7 +226,7 @@ namespace {
     // Refresh only this ant's food memory using its current 7-by-7 view.
     void rememberVisibleFood(AntWorld &world, Ant &ant) {
         std::vector<Coord> visible = ant.foodScan(world.foodMap);
-        std::vector<Coord> &memory = plan.rememberedFood[ant.id];
+        std::vector<Coord> &memory = plan.rememberedFood[localId(world, ant)];
         // If a remembered tile is visible but now empty, forget it.
         memory.erase(std::remove_if(memory.begin(), memory.end(), [&](Coord food) {
             const bool inCurrentScan = std::abs(food.first - ant.position.first) <= ant.foodRadius &&
@@ -196,7 +235,7 @@ namespace {
         }), memory.end());
 
         for (Coord food: visible) {
-            if (plan.sectorForCell[food.first][food.second] == plan.sectorForAnt[ant.id] &&
+            if (plan.sectorForCell[food.first][food.second] == plan.sectorForAnt[localId(world, ant)] &&
                 std::find(memory.begin(), memory.end(), food) == memory.end()) {
                 memory.push_back(food);
             }
@@ -204,14 +243,14 @@ namespace {
     }
 
 
-    void forgetFood(const Ant &ant, Coord food) {
-        std::vector<Coord> &memory = plan.rememberedFood[ant.id];
+    void forgetFood(const AntWorld &world, const Ant &ant, Coord food) {
+        std::vector<Coord> &memory = plan.rememberedFood[localId(world, ant)];
         memory.erase(std::remove(memory.begin(), memory.end(), food), memory.end());
     }
 
     // A scan covers a square around the ant, clipped at the board edge.
     void markLocalScan(const AntWorld &world, const Ant &ant) {
-        MapTemplate &scanned = plan.scanned[ant.id];
+        MapTemplate &scanned = plan.scanned[localId(world, ant)];
         for (int row = ant.position.first - ant.foodRadius; row <= ant.position.first + ant.foodRadius; ++row) {
             for (int col = ant.position.second - ant.foodRadius; col <= ant.position.second + ant.foodRadius; ++col) {
                 if (row >= 0 && row < static_cast<int>(world.terrainMap.size()) &&
@@ -240,7 +279,7 @@ namespace {
     Coord knownFoodTarget(const AntWorld &world, const Ant &ant) {
         Coord best{-1, -1};
         int bestCost = std::numeric_limits<int>::max();
-        for (Coord food: plan.rememberedFood[ant.id]) {
+        for (Coord food: plan.rememberedFood[localId(world, ant)]) {
             const std::vector<Coord> route = shortestPath(world.terrainMap, ant.position, food);
             if (route.empty()) continue;
             const int cost = calculatePathCost(world.terrainMap, route);
@@ -254,11 +293,11 @@ namespace {
 
     // Walk forward through this ant's queue, skipping cells already scanned or unreachable.
     Coord nextWaypoint(const AntWorld &world, const Ant &ant) {
-        std::size_t &cursor = plan.nextWaypoint[ant.id];
-        const std::vector<Coord> &queue = plan.queues[ant.id];
+        std::size_t &cursor = plan.nextWaypoint[localId(world, ant)];
+        const std::vector<Coord> &queue = plan.queues[localId(world, ant)];
         while (cursor < queue.size()) {
             const Coord cell = queue[cursor];
-            if (plan.scanned[ant.id][cell.first][cell.second]) {
+            if (plan.scanned[localId(world, ant)][cell.first][cell.second]) {
                 ++cursor;
                 continue;
             }
@@ -275,7 +314,7 @@ namespace {
         Coord best{-1, -1};
         int bestFood = -1;
         int bestCost = std::numeric_limits<int>::max();
-        const int budget = ant.energy - state.exploreFloor[ant.id];
+        const int budget = ant.energy - state.exploreFloor[localId(world, ant)];
         for (int row = std::max(0, ant.position.first - ant.foodRadius);
              row <= std::min(static_cast<int>(world.terrainMap.size()) - 1, ant.position.first + ant.foodRadius); ++row) {
             for (int col = std::max(0, ant.position.second - ant.foodRadius);
@@ -310,7 +349,7 @@ namespace {
                 if (cost <= ant.energy && cost < bestCost) {
                     best = cell;
                     bestCost = cost;
-                    state.exploreFloor[ant.id] = 0;
+                    state.exploreFloor[localId(world, ant)] = 0;
                 }
             }
         }
@@ -362,7 +401,7 @@ namespace {
             }
             if (neighbor.first < 0) {
                 // ponytail: the engine drops carried food only at zero energy; no affordable move can leave it stranded.
-                state.phase[ant.id] = 3;
+                state.phase[localId(world, ant)] = 3;
                 return;
             }
             ant.move(world.terrainMap, neighbor, world.foodMap);
@@ -375,46 +414,46 @@ namespace {
         while (state.active < state.order.size()) {
             const int id = state.order[state.active];
             const auto it = std::find_if(world.ants.begin(), world.ants.end(),
-                                         [&](const Ant &candidate) { return candidate.id == id; });
+                                         [&](const Ant &candidate) { return localId(world, candidate) == id; });
             if (it != world.ants.end() && state.phase[id] != 3 && it->energy > 0) break;
             ++state.active;
         }
         if (state.active == state.order.size()) return;
         Ant &ant = *std::find_if(world.ants.begin(), world.ants.end(), [&](const Ant &candidate) {
-            return candidate.id == state.order[state.active];
+            return localId(world, candidate) == state.order[state.active];
         });
         markLocalScan(world, ant);
         rememberVisibleFood(world, ant);
-        const int ownSector = plan.sectorForAnt[ant.id];
+        const int ownSector = plan.sectorForAnt[localId(world, ant)];
         const int nextSector = (ownSector + 1) % static_cast<int>(state.order.size());
 
         // A stranded carrier starts a handoff instead of repeatedly trying to return home.
-        if (state.phase[ant.id] == 0 && ant.carryingFood &&
+        if (state.phase[localId(world, ant)] == 0 && ant.carryingFood &&
             pathCost(world.terrainMap, ant.position, world.homeCoordinates) > ant.energy) {
-            state.phase[ant.id] = 1;
-            state.exploreFloor[ant.id] = ant.energy / 2;
-            state.explorationTarget[ant.id] = chooseHandoffSite(world, ant, nextSector);
+            state.phase[localId(world, ant)] = 1;
+            state.exploreFloor[localId(world, ant)] = ant.energy / 2;
+            state.explorationTarget[localId(world, ant)] = chooseHandoffSite(world, ant, nextSector);
         }
 
         // Phase 1: enter the next sector and leave a pheromone for its ant.
-        if (state.phase[ant.id] == 1) {
-            const Coord target = state.explorationTarget[ant.id];
+        if (state.phase[localId(world, ant)] == 1) {
+            const Coord target = state.explorationTarget[localId(world, ant)];
             if (target.first >= 0 && ant.position != target) {
                 const auto route = shortestPath(world.terrainMap, ant.position, target);
-                moveSegment(world, ant, route, state.exploreFloor[ant.id]);
+                moveSegment(world, ant, route, state.exploreFloor[localId(world, ant)]);
             }
             if (plan.sectorForCell[ant.position.first][ant.position.second] == nextSector &&
-                (ant.position == target || ant.energy <= state.exploreFloor[ant.id])) {
+                (ant.position == target || ant.energy <= state.exploreFloor[localId(world, ant)])) {
                 ant.dropPheromone(world.pheromoneMap);
-                state.phase[ant.id] = 2;
-            } else if (target.first < 0 || ant.energy <= state.exploreFloor[ant.id]) {
-                state.phase[ant.id] = 3;
+                state.phase[localId(world, ant)] = 2;
+            } else if (target.first < 0 || ant.energy <= state.exploreFloor[localId(world, ant)]) {
+                state.phase[localId(world, ant)] = 3;
             }
             return;
         }
 
         // Phase 2: use remaining energy to carry food closer to home.
-        if (state.phase[ant.id] == 2) {
+        if (state.phase[localId(world, ant)] == 2) {
             const Coord target = closestHandoffCell(world, ant, nextSector);
             if (target.first >= 0 && ant.position != target) {
                 moveSegment(world, ant, shortestPath(world.terrainMap, ant.position, target));
@@ -432,19 +471,19 @@ namespace {
         const Coord food = knownFoodTarget(world, ant);
         if (food.first >= 0) {
             moveSegment(world, ant, shortestPath(world.terrainMap, ant.position, food));
-            if (ant.position == food) forgetFood(ant, food);
+            if (ant.position == food) forgetFood(world, ant, food);
             return;
         }
 
         // A visible unvisited marker may lead this ant toward dropped food.
         for (Coord marker: ant.pheromoneScan(world.pheromoneMap)) {
             if (plan.sectorForCell[marker.first][marker.second] != ownSector ||
-                std::find(state.visitedPheromone[ant.id].begin(), state.visitedPheromone[ant.id].end(), marker) !=
-                    state.visitedPheromone[ant.id].end()) continue;
+                std::find(state.visitedPheromone[localId(world, ant)].begin(), state.visitedPheromone[localId(world, ant)].end(), marker) !=
+                    state.visitedPheromone[localId(world, ant)].end()) continue;
             const auto route = shortestPath(world.terrainMap, ant.position, marker);
             if (route.empty() || calculatePathCost(world.terrainMap, route) > ant.energy) continue;
             moveSegment(world, ant, route);
-            if (ant.position == marker) state.visitedPheromone[ant.id].push_back(marker);
+            if (ant.position == marker) state.visitedPheromone[localId(world, ant)].push_back(marker);
             return;
         }
 
@@ -452,7 +491,7 @@ namespace {
         if (waypoint.first >= 0) {
             moveSegment(world, ant, shortestPath(world.terrainMap, ant.position, waypoint));
         } else {
-            state.phase[ant.id] = 3;
+            state.phase[localId(world, ant)] = 3;
         }
     }
 
@@ -469,4 +508,5 @@ void AntWorld::forage() {
 
 
     forageV2(*this);
+    forgetDeadAnts(*this);
 }

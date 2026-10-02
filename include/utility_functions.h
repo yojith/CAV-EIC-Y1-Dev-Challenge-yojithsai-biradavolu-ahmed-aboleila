@@ -20,34 +20,6 @@ struct Node {
     }
 };
 
-inline MapTemplate shortestDistances(const MapTemplate &grid, Coord start) {
-    const int rows = static_cast<int>(grid.size());
-    const int cols = static_cast<int>(grid[0].size());
-    MapTemplate distances(rows, std::vector<int>(cols, std::numeric_limits<int>::max()));
-    std::priority_queue<Node, std::vector<Node>, std::greater<Node>> queue;
-    distances[start.first][start.second] = 0;
-    queue.push({0, start});
-    const int dr[4] = {-1, 1, 0, 0};
-    const int dc[4] = {0, 0, -1, 1};
-    while (!queue.empty()) {
-        const Node current = queue.top();
-        queue.pop();
-        const auto [row, col] = current.pos;
-        if (current.cost != distances[row][col]) continue;
-        for (int direction = 0; direction < 4; ++direction) {
-            const int nextRow = row + dr[direction];
-            const int nextCol = col + dc[direction];
-            if (nextRow < 0 || nextRow >= rows || nextCol < 0 || nextCol >= cols) continue;
-            const int cost = current.cost + 1 + std::abs(grid[row][col] - grid[nextRow][nextCol]);
-            if (cost < distances[nextRow][nextCol]) {
-                distances[nextRow][nextCol] = cost;
-                queue.push({cost, {nextRow, nextCol}});
-            }
-        }
-    }
-    return distances;
-}
-
 inline std::vector<Coord> shortestPath(
     const std::vector<std::vector<int> > &grid,
     Coord start,

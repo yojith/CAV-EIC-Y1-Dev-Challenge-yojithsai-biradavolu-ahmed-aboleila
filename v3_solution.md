@@ -10,7 +10,7 @@ The test runner calls this mode `v3_1`.
 
 ## V3.2: home-directed pheromone handoff
 
-Compile `solutions/v3_2_solution.cpp` with `-DSOLUTION=v3_2`. Instead of entering the next sector, the ant follows its route toward home and places a pheromone at its current position as it moves. If it runs out of energy, it drops its carried food there. The following ant checks for a pheromone it can **see** in the previous sector, travels to it, scans for nearby food, and tries to collect it before resuming its own sector. Pheromones do not give ants global knowledge, and the next ant may never see the marker or reach the dropped food.
+Compile `solutions/v3_2_solution.cpp` with `-DSOLUTION=v3_2`. Instead of entering the next sector, the ant follows its route toward home and moves its single pheromone marker to its current position; dropping a new marker erases that ant's old one. If it runs out of energy, it drops its carried food there. The following ant checks for a pheromone it can **see** in the previous sector, travels to it, scans for nearby food, and tries to collect it before resuming its own sector. Pheromones do not give ants global knowledge, and the next ant may never see the marker or reach the dropped food.
 
 The test runner calls this mode `v3_2`.
 

@@ -4,7 +4,7 @@
 -Only one ant will be collecting food at a time
 -Ants will  begin by moving away from the house as much as possible until they encounter food. prioritize collecting food in the beginning, starting with what is closest to the home, then expanding outwards
 -Once they reach a food item within their radius of vision, they have to calculate the energy required to grab that food and the energy required to go back home, and compare it with the amount of energy they have left.
--If the ants realize that they don't have enough energy to make it back home, they will still pick up that food but what they will do is move into the next ant's sector (next sector counter clockwise)
+-If the ants realize that they don't have enough energy to make it back home, they will still pick up that food but what they will do is move into the next ant's sector (next sector clockwise in the implementation's sector indexing)
 -Once they reach there, their goal is to use half the remaining energy to explore and drop a pheromone in the region with the most abundant food in the next ant's sector, something it does by checking the cells in the next ants sector for the cell closest to the ant. then use the remaining half of their energy to deliver the food they are carrying (originally from their own sector) as close to the house (still in the  following/second ant's sector sector). so that its easier for the next ant to pick up this food from where the original ant died
 -The next ant then follows the same playbook such that it prioritizes food  at the beginning then, discover, then delivery
 -An ant cannot cross into the previous sector even if it senses that a pheromone is there

@@ -38,7 +38,6 @@ AntWorld::AntWorld(uint32_t seed, int mapSize_x, int mapSize_y, int antCount, do
                                                                int(mapSize_x * mapSize_y * 0.4))(rng);
         std::cout << initialEnergy << std::endl;
         this->ants.emplace_back(initialEnergy, this->homeCoordinates);
-        this->ants.back().id = i;
     }
 
     this->score = 0;
