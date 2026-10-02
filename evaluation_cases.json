@@ -1,0 +1,6 @@
+[
+  { "name": "baseline", "seed": 12345, "rows": 15, "cols": 15, "ants": 8, "foodDensity": 0.4 },
+  { "name": "second-seed", "seed": 98765, "rows": 15, "cols": 15, "ants": 8, "foodDensity": 0.4 },
+  { "name": "sparse", "seed": 12345, "rows": 15, "cols": 15, "ants": 8, "foodDensity": 0.15 },
+  { "name": "rectangular", "seed": 54321, "rows": 12, "cols": 18, "ants": 6, "foodDensity": 0.4 }
+]

@@ -1,0 +1,7 @@
+{
+  "seeds": { "start": 1, "stop": 10, "step": 1 },
+  "board_size": { "start": 10, "stop": 50, "step": 5 },
+  "food_density_percent": { "start": 10, "stop": 90, "step": 10 },
+  "ants": { "minimum": 1, "maximum_at_smallest_size": 10, "increase_per_size_step": 1 },
+  "variants": ["v1", "v2", "v3_1", "v3_2", "v4"]
+}

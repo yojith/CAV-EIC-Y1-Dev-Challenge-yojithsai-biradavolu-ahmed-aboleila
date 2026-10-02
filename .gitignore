@@ -1,0 +1,6 @@
+build/**
+build-*/**
+__pycache__/
+evaluation_results*.csv
+evaluation_run.log
+evaluation_run.err

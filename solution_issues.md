@@ -1,0 +1,9 @@
+# Remaining solution issues
+
+1. **V2/V3 handoffs can strand carried food.** V2 and V3.1 may mark an ant finished when no permitted move exists; V3.2 can do so when no homeward neighbour is affordable. An ant can still have positive energy and be carrying food. The engine drops food only at zero energy, so the intended handoff may never occur.
+2. **V4 can waste energy on duplicate pursuit.** Two ants may remember and target the same food. The first pickup clears the cell, so food is never duplicated. A second ant outside scan range may still travel toward the now-empty cell.
+3. **Home-cell food may be ignored by V1, V2, and V3.** Home is excluded from the sectors, so those variants do not select food generated there as a target. They may collect it incidentally when moving to home.
+4. **Long moves skip food along the route.** `Ant::move()` checks for food only at its final position, not at every traversed cell. An ant can pass over food without collecting it.
+5. **V2 routes can cross sector boundaries.** Its target and pheromone choices are sector-filtered, but its `shortestPath()` routes are not. The draft's stronger sector restriction is therefore not enforced. Its handoff fallback may also discard the half-energy reserve.
+6. **The V1/V4 death spiral cannot always exhaust an ant.** It spends energy only through legal `move()` and `returnHome()` calls. If the ant has positive energy but every adjacent move costs more, it remains alive; the development executable's separate idle-stop guard then ends that run.
+7. **The existing tests do not check variant behavior.** `test/antworld_tests.cpp` contains framework checks for generation, paths, movement, scanning, pheromones, scoring, and termination. CMake links that target with the default applicant file, but it does not assert V1–V4 strategy rules, food-information isolation, or handoff outcomes. The test file has not been modified.

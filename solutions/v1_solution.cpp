@@ -1,6 +1,6 @@
 //
 // Created by dusan on 9/15/26.
-// Default submission (V1): each ant searches an assigned sector.
+// V1: each ant searches an assigned sector and collects food it has seen there.
 //
 
 #include "../include/antworld.h"
@@ -40,6 +40,7 @@ namespace {
         std::vector<MapTemplate> scanned;
         std::vector<std::vector<Coord>> rememberedFood;
         std::vector<int> sectorForAnt;
+        //Maps each board cell to its assigned setctor
         MapTemplate sectorForCell;
         // Original ant indices stay stable even when the framework erases dead ants.
         std::vector<int> liveIds;

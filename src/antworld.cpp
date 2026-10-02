@@ -17,11 +17,11 @@ Ant::Ant(int initEnergy, Coord homeCoordinates) {
     this->homeCoord = homeCoordinates;
 }
 
-AntWorld::AntWorld(uint32_t seed, int mapSize_x, int mapSize_y, int antCount) : rng(seed) {
+AntWorld::AntWorld(uint32_t seed, int mapSize_x, int mapSize_y, int antCount, double foodDensity) : rng(seed) {
     // Generate the various world map layers
     this->terrainMap = generateWorldMap(mapSize_x, mapSize_y, this->rng);
     // come back to this
-    int foodCount = int(mapSize_x * mapSize_y * 0.4);
+    int foodCount = int(mapSize_x * mapSize_y * foodDensity);
     this->foodMap = spreadFood(mapSize_x, mapSize_y, foodCount, this->rng);
     this->pheromoneMap = MapTemplate(mapSize_x, std::vector<int>(mapSize_y, 0));
 
